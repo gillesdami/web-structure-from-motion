@@ -32,15 +32,22 @@ COPY CMakeLists.txt /home/openMVG/src/CMakeLists.txt
 WORKDIR /home/openMVG
 RUN git submodule update -i
 WORKDIR /home/openMVG/build
-## optional valid that the project can be build (takes a while)
+## optional valid that the project can be built (takes a while)
 RUN cmake ../src/
 RUN make
 RUN rm -Rf /home/openMVG/build
 
-# install EIGEN (may be avoidable but dunno how)
+# install eigen (may be avoidable but dunno how)
 WORKDIR /home
 RUN git clone https://github.com/eigenteam/eigen-git-mirror
 
-# build openMVG-js
+# build openMVG-js (TODO must be improved, contribution is welcome)
 WORKDIR /home/openMVG/build_js
-RUN ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && em++ -o out.js --std=c++11 -I/home/openMVG/src/ -I/home/eigen-git-mirror ../src/software/SfM/main_GlobalSfM.cpp -s ERROR_ON_UNDEFINED_SYMBOLS=0"]
+RUN ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && em++ -o SfMInit_ImageListing.js --std=c++11 -I/home/openMVG/src/ -I/home/eigen-git-mirror ../src/software/SfM/SfMInit_ImageListing.cpp -s ERROR_ON_UNDEFINED_SYMBOLS=0"]
+RUN ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && em++ -o main_ComputeFeatures.js --std=c++11 -I/home/openMVG/src/ -I/home/eigen-git-mirror -I/home/openMVG/src/dependencies/cereal/include/ ../src/software/SfM/main_ComputeFeatures.cpp -s ERROR_ON_UNDEFINED_SYMBOLS=0"]
+
+#TODO main_ComputeMatches
+RUN ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && em++ -o main_IncrementalSfM.js --std=c++11 -I/home/openMVG/src/ -I/home/eigen-git-mirror ../src/software/SfM/main_IncrementalSfM.cpp -s ERROR_ON_UNDEFINED_SYMBOLS=0"]
+RUN ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && em++ -o main_GlobalSfM.js --std=c++11 -I/home/openMVG/src/ -I/home/eigen-git-mirror ../src/software/SfM/main_GlobalSfM.cpp -s ERROR_ON_UNDEFINED_SYMBOLS=0"]
+RUN ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && em++ -o main_ComputeSfM_DataColor.js --std=c++11 -I/home/openMVG/src/ -I/home/eigen-git-mirror ../src/software/SfM/main_ComputeSfM_DataColor.cpp -s ERROR_ON_UNDEFINED_SYMBOLS=0"]
+RUN ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && em++ -o main_ComputeStructureFromKnownPoses.js --std=c++11 -I/home/openMVG/src/ -I/home/eigen-git-mirror ../src/software/SfM/main_ComputeStructureFromKnownPoses.cpp -s ERROR_ON_UNDEFINED_SYMBOLS=0"]
