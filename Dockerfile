@@ -40,5 +40,6 @@ WORKDIR /home/openMVG/build_js
 COPY src/lemon_config.h /home/openMVG/src/third_party/lemon/lemon/config.h
 COPY src/build.sh /home/build.sh
 COPY src/pre-js.js /home/pre-js.js
+COPY src/Makefile /home/Makefile
 RUN ["chmod", "+x", "/home/build.sh"]
-ENTRYPOINT ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && /home/build.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && make -f /home/Makefile"]

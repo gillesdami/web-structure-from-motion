@@ -16,6 +16,8 @@ I also provide a complete [example](example.js) on how to use the lib.
 
 The project can be built with docker.
 
+You may want to adapt the preferences in /src/build.sh to your use case.
+
 ```bash
 docker build -t wsfm .
 docker run --rm -t -v $(pwd)/dist:/home/openMVG/build_js wsfm

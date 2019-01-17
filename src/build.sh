@@ -1,6 +1,6 @@
 #!/bin/sh
-# yeah, a Makefile would be nice
-opts="--std=c++11 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s DISABLE_EXCEPTION_CATCHING=0 -s MODULARIZE=1 --pre-js /home/pre-js.js"
+preference="-s DISABLE_EXCEPTION_CATCHING=0 -s EXTRA_EXPORTED_RUNTIME_METHODS=[\"FS\"]"
+opts="--std=c++11 -s DEMANGLE_SUPPORT=1 -s MODULARIZE=1 --pre-js /home/pre-js.js ${preference}"
 src="/home/openMVG/src/"
 common_includes="-I${src} -I/home/eigen-git-mirror"
 
