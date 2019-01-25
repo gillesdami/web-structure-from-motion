@@ -1,3 +1,5 @@
+# Warning: black magic, need a refactor
+
 CONFIG_DIR = /home
 SRC_DIR = /home/openMVG/src
 EIGEN_DIR = /home/eigen-git-mirror
@@ -15,9 +17,11 @@ JPEGLIB_SRC = jmemnobs.c jaricom.c jcapimin.c jcapistd.c jcarith.c jccoefct.c jc
 .PHONY: all
 
 all: main_ComputeFeatures main_ComputeMatches main_SfMInit_ImageListing main_GlobalSfM
+	em++ -o wsfm.js $(JS_OPTIONS) -o3 $(BC_OPTIONS) $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(CONFIG_DIR)/wsfm.cpp -I$(CONFIG_DIR)
 
 main_ComputeFeatures: stlplus sift image zlib features system cereal
-	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) -DVL_DISABLE_SSE2 $(COMMON_INCLUDES) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/software/SfM/$@.cpp
+	sed -i 's/int main/int main_ComputeFeatures/' $(SRC_DIR)/software/SfM/$@.cpp
+	em++ -o $(TMP_DIR)/$@.bc $(BC_OPTIONS) -DVL_DISABLE_SSE2 $(COMMON_INCLUDES) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/software/SfM/$@.cpp
 
 #main_IncrementalSfM:
 #	echo "todo"
@@ -26,14 +30,16 @@ main_ComputeFeatures: stlplus sift image zlib features system cereal
 #	echo "todo"
 
 main_ComputeMatches: lemon stlplus features system cereal multiview ceres matching_image_collection numeric matching
-	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) -s ERROR_ON_UNDEFINED_SYMBOLS=0 $(COMMON_INCLUDES) -I$(SRC_DIR)/third_party/lemon/ $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp $(TMP_DIR)/cereal.bc $(SRC_DIR)/software/SfM/$@.cpp
+	sed -i 's/int main/int main_ComputeMatches/' $(SRC_DIR)/software/SfM/$@.cpp
+	em++ -o $(TMP_DIR)/$@.bc $(BC_OPTIONS) $(COMMON_INCLUDES) -I$(SRC_DIR)/third_party/lemon/ $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp $(TMP_DIR)/cereal.bc $(SRC_DIR)/software/SfM/$@.cpp
 
 main_SfMInit_ImageListing: exif_IO_EasyExif image_io zlib stlplus easyexif cereal
-	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/software/SfM/$@.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp
+	sed -i 's/int main/int main_SfMInit_ImageListing/' $(SRC_DIR)/software/SfM/$@.cpp
+	em++ -o $(TMP_DIR)/$@.bc $(BC_OPTIONS) $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/software/SfM/$@.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp
 
 main_GlobalSfM: stlplus pipelines_global features system sfm geometry linearProgramming multiview numeric cxsparse
-	echo "WIP"
-	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/software/SfM/$@.cpp $(OSI_CLP_DIR)/Clp/src/liblib_clp.a $(OSI_CLP_DIR)/Clp/src/OsiClp/liblib_OsiClpSolver.a $(OSI_CLP_DIR)/Osi/src/Osi/liblib_Osi.a $(OSI_CLP_DIR)/CoinUtils/src/liblib_CoinUtils.a $(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/glog/logging.cc -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I$(SRC_DIR)/third_party/ceres-solver/include/ -I$(SRC_DIR)/third_party/ceres-solver/config/ $(SRC_DIR)/openMVG/matching/indMatch_utils.cpp $(SRC_DIR)/third_party/ceres-solver/lib/libopenMVG_ceres.a -I$(EIGEN_DIR) -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I../src/third_party/ceres-solver/internal/ -I$(SRC_DIR)/third_party/ceres-solver/include/ 
+	sed -i 's/int main/int main_GlobalSfM/' $(SRC_DIR)/software/SfM/$@.cpp
+	em++ -o $(TMP_DIR)/$@.bc $(BC_OPTIONS) $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/software/SfM/$@.cpp $(OSI_CLP_DIR)/Clp/src/liblib_clp.a $(OSI_CLP_DIR)/Clp/src/OsiClp/liblib_OsiClpSolver.a $(OSI_CLP_DIR)/Osi/src/Osi/liblib_Osi.a $(OSI_CLP_DIR)/CoinUtils/src/liblib_CoinUtils.a $(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/glog/logging.cc -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I$(SRC_DIR)/third_party/ceres-solver/include/ -I$(SRC_DIR)/third_party/ceres-solver/config/ $(SRC_DIR)/openMVG/matching/indMatch_utils.cpp $(SRC_DIR)/third_party/ceres-solver/lib/libopenMVG_ceres.a -I$(EIGEN_DIR) -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I../src/third_party/ceres-solver/internal/ -I$(SRC_DIR)/third_party/ceres-solver/include/ 
 
 pipelines_global: lemon ceres
 	em++ -o $(TMP_DIR)/$@.bc $(BC_OPTIONS) $(COMMON_INCLUDES) $(filter-out $(wildcard $(SRC_DIR)/openMVG/sfm/pipelines/global/*_test.cpp),$(wildcard $(SRC_DIR)/openMVG/sfm/pipelines/global/*.cpp)) $(SRC_DIR)/openMVG/sfm/pipelines/relative_pose_engine.cpp $(SRC_DIR)/openMVG/sfm/pipelines/sfm_robust_model_estimation.cpp -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I$(SRC_DIR)/third_party/lemon/ -I$(SRC_DIR)/third_party/ceres-solver/include/ -I$(SRC_DIR)/third_party/ceres-solver/config/ $(patsubst %, $(TMP_DIR)/%.bc, $?)
