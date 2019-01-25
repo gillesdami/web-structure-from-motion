@@ -1,11 +1,23 @@
 /**
  * Allocate the program memory and init the file system
  */
-var ctx = main_SfMInit_ImageListing();
-ctx.FS.mkdir('/input');
-ctx.FS.mkdir('/output');
-ctx.print = log;
-ctx.printErr = (txt) => log(txt, true);
+const ctxs = [main_SfMInit_ImageListing(), 
+    main_ComputeFeatures(),
+    main_ComputeMatches(),
+    main_GlobalSfM()];
+
+const bfs = new BrowserFS.EmscriptenFS();
+bfs.mkdir('/input');
+bfs.mkdir('/matches');
+bfs.mkdir('/output');
+
+for (ctx of ctxs) {
+    ctx.FS.createFolder(ctx.FS.root, 'share', true, true);
+    ctx.FS.mount(bfs, {root: '/'}, '/share');
+
+    ctx.print = log;
+    ctx.printErr = (txt) => log(txt, true);
+}
 
 /**
  * Logging utility
@@ -20,10 +32,10 @@ function log(txt, err = false) {
  * Reset the file system
  */
 function clearFS() {
-    for (var dir of ["/input", "/output"]) {
-        for (file of ctx.FS.readdir(dir)) {
+    for (var dir of ["/input", "/matches", "/output"]) {
+        for (file of bfs.readdir(dir)) {
             if(file !== "." && file !== "..")
-                ctx.FS.unlink(dir + "/" + file);
+                bfs.unlink(dir + "/" + file);
         }
     }
     log("Filesystem cleared !");
@@ -34,27 +46,26 @@ function clearFS() {
  * 
  * @param {Event} evt 
  */
-function uploadFilesToWasm(evt) {
-    fileInput = evt.target;
-
-    clearFS();
-
-    if (fileInput.files.length == 0)
-        return;
-    
-    Array.from(fileInput.files).forEach(function(file) {
+function uploadFilesToWasm(files) {
+    Array.from(files).forEach(function(file) {
         var fr = new FileReader();
         fr.onload = function () {
             var data = new Uint8Array(fr.result);
             console.log('/input', file.name);
-            ctx.FS.createDataFile('/input', file.name, data, true, true, true);
-    
-            fileInput.value = '';
+            bfs.createDataFile('/input', file.name, data, true, true, true);
         };
         fr.readAsArrayBuffer(file);
     });
 }
-document.getElementById('fileloader').addEventListener("change", uploadFilesToWasm);
+
+function download(blob) {
+    var elem = window.document.createElement('a');
+    elem.href = window.URL.createObjectURL(blob);
+    elem.download = 'sfm_data.json';
+    document.body.appendChild(elem);
+    elem.click();
+    document.body.removeChild(elem);
+} 
 
 /**
  * run main_SfMInit_ImageListing and make the browser download the result
@@ -62,17 +73,19 @@ document.getElementById('fileloader').addEventListener("change", uploadFilesToWa
  * @param  {string[]} args
  */
 function run() {
-    ctx['callMain'](["-i", "/input", "-o", "/output", "-d", "/input/sensor_width_camera_database.txt"]);
+    var fileInput = document.getElementById('fileloader');
 
-    log("program succeed, downloading the result...")
-    var jsonStr = ctx.FS.readFile('/output/sfm_data.json', { encoding: 'utf8' });
+    clearFS();
+    uploadFilesToWasm(fileInput.files);
+    fileInput.value = '';
 
-    //download
-    var blob = new Blob([jsonStr], {type: 'application/json'});
-    var elem = window.document.createElement('a');
-    elem.href = window.URL.createObjectURL(blob);
-    elem.download = 'sfm_data.json';
-    document.body.appendChild(elem);
-    elem.click();
-    document.body.removeChild(elem);
+    ctxs[0]['callMain'](["-i", "/share/input", "-o", "/share/matches", "-d", "/share/input/sensor_width_camera_database.txt"]);
+    log("program0 done");
+    ctxs[1]['callMain'](["-i", "/share/matches/sfm_data.json", "-o", "/share/matches"]);
+    log("program1 done");
+    ctxs[2]['callMain'](["-i", "/share/matches/sfm_data.json", "-o", "/share/matches"]);
+    log("program2 done");
+    ctxs[3]['callMain'](["-i", "/share/matches/sfm_data.json", "-m", "/share/matches", "-o", "/share/output"]);    
+    log("program3 done")
 }
+document.getElementById('runProgram').addEventListener("click", run);

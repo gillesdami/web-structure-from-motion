@@ -31,15 +31,16 @@ RUN git clone https://github.com/openMVG/openMVG.git
 WORKDIR /home/openMVG
 RUN git submodule update -i
 
-# install eigen (may be avoidable but I dunno where to find it)
+# install eigen
 WORKDIR /home
 RUN git clone https://github.com/eigenteam/eigen-git-mirror
 
 # build openMVG-js
 WORKDIR /home/openMVG/build_js
-COPY src/lemon_config.h /home/openMVG/src/third_party/lemon/lemon/config.h
-COPY src/build.sh /home/build.sh
+#COPY src/lemon_config.h /home/openMVG/src/third_party/lemon/lemon/config.h
 COPY src/pre-js.js /home/pre-js.js
 COPY src/Makefile /home/Makefile
-RUN ["chmod", "+x", "/home/build.sh"]
+COPY src/tif_config.h /home/openMVG/src/third_party/tiff/tif_config.h
+COPY src/jconfig.h /home/openMVG/src/third_party/jpeg/jconfig.h
+#RUN ["chmod", "+x", "/home/build.sh"]
 ENTRYPOINT ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && make -f /home/Makefile"]

@@ -290,8 +290,7 @@ function dynamicAlloc(size) {
 
 function alignMemory(size, factor) {
   if (!factor) factor = STACK_ALIGN; // stack alignment (16-byte) by default
-  var ret = size = Math.ceil(size / factor) * factor;
-  return ret;
+  return Math.ceil(size / factor) * factor;
 }
 
 function getNativeTypeSize(type) {
@@ -338,11 +337,20 @@ var asm2wasmImports = { // special asm2wasm imports
 var jsCallStartIndex = 1;
 var functionPointers = new Array(0);
 
-// 'sig' parameter is only used on LLVM wasm backend
+// Add a wasm function to the table.
+// Attempting to call this with JS function will cause of table.set() to fail
+function addWasmFunction(func) {
+  var table = Module['wasmTable'];
+  var ret = table.length;
+  table.grow(1);
+  table.set(ret, func);
+  return ret;
+}
+
+// 'sig' parameter is currently only used for LLVM backend under certain
+// circumstance: RESERVED_FUNCTION_POINTERS=1, EMULATED_FUNCTION_POINTERS=0.
 function addFunction(func, sig) {
-  if (typeof sig === 'undefined') {
-    err('warning: addFunction(): You should provide a wasm function signature string as a second argument. This is not necessary for asm.js and asm2wasm, but is required for the LLVM wasm backend, so it is recommended for full portability.');
-  }
+
   var base = 0;
   for (var i = base; i < base + 0; i++) {
     if (!functionPointers[i]) {
@@ -351,6 +359,7 @@ function addFunction(func, sig) {
     }
   }
   throw 'Finished up all reserved function pointers. Use a higher value for RESERVED_FUNCTION_POINTERS.';
+
 }
 
 function removeFunction(index) {
@@ -1725,8 +1734,8 @@ function integrateWasmJS() {
   Module['asm'] = function(global, env, providedBuffer) {
     // import table
     if (!env['table']) {
+     assert(Module['wasmTableSize'] !== undefined);
       var TABLE_SIZE = Module['wasmTableSize'];
-      if (TABLE_SIZE === undefined) TABLE_SIZE = 1024; // works in binaryen interpreter at least
       var MAX_TABLE_SIZE = Module['wasmMaxTableSize'];
       if (typeof WebAssembly === 'object' && typeof WebAssembly.Table === 'function') {
         if (MAX_TABLE_SIZE !== undefined) {
@@ -1773,8 +1782,8 @@ var ASM_CONSTS = [];
 
 STATIC_BASE = GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 260992;
-/* global initializers */  __ATINIT__.push({ func: function() { __GLOBAL__I_000101() } }, { func: function() { ___cxx_global_var_init_78() } }, { func: function() { ___cxx_global_var_init_90() } }, { func: function() { ___cxx_global_var_init_89() } }, { func: function() { ___cxx_global_var_init_88() } }, { func: function() { ___cxx_global_var_init_87() } }, { func: function() { ___cxx_global_var_init_86() } }, { func: function() { ___cxx_global_var_init_85() } }, { func: function() { ___cxx_global_var_init_84() } }, { func: function() { ___cxx_global_var_init_83() } }, { func: function() { ___cxx_global_var_init_82() } }, { func: function() { ___cxx_global_var_init_81() } }, { func: function() { ___cxx_global_var_init_80() } }, { func: function() { ___cxx_global_var_init_79() } }, { func: function() { ___cxx_global_var_init_91() } }, { func: function() { ___cxx_global_var_init_77() } }, { func: function() { ___cxx_global_var_init_76() } }, { func: function() { ___cxx_global_var_init_75() } }, { func: function() { ___cxx_global_var_init_74() } }, { func: function() { ___cxx_global_var_init_73() } }, { func: function() { ___cxx_global_var_init_72() } }, { func: function() { ___cxx_global_var_init_71() } }, { func: function() { ___cxx_global_var_init_70() } }, { func: function() { ___cxx_global_var_init_69() } }, { func: function() { ___cxx_global_var_init_68() } }, { func: function() { ___cxx_global_var_init_102() } }, { func: function() { __GLOBAL__sub_I_iostream_cpp() } }, { func: function() { ___emscripten_environ_constructor() } }, { func: function() { __GLOBAL__sub_I_sfm_data_utils_cpp() } }, { func: function() { __GLOBAL__sub_I_sfm_data_io_cereal_cpp() } }, { func: function() { ___cxx_global_var_init_109() } }, { func: function() { ___cxx_global_var_init_108() } }, { func: function() { ___cxx_global_var_init_107() } }, { func: function() { ___cxx_global_var_init_106() } }, { func: function() { ___cxx_global_var_init_105() } }, { func: function() { ___cxx_global_var_init_104() } }, { func: function() { ___cxx_global_var_init_103() } }, { func: function() { ___cxx_global_var_init_67() } }, { func: function() { ___cxx_global_var_init_101() } }, { func: function() { ___cxx_global_var_init_100() } }, { func: function() { ___cxx_global_var_init_99() } }, { func: function() { ___cxx_global_var_init_98() } }, { func: function() { ___cxx_global_var_init_97() } }, { func: function() { ___cxx_global_var_init_96() } }, { func: function() { ___cxx_global_var_init_95() } }, { func: function() { ___cxx_global_var_init_94() } }, { func: function() { ___cxx_global_var_init_93() } }, { func: function() { ___cxx_global_var_init_92() } }, { func: function() { __GLOBAL__sub_I_main_SfMInit_ImageListing_cpp() } }, { func: function() { ___cxx_global_var_init_40() } }, { func: function() { ___cxx_global_var_init_39() } }, { func: function() { ___cxx_global_var_init_38() } }, { func: function() { ___cxx_global_var_init_37() } }, { func: function() { ___cxx_global_var_init_36() } }, { func: function() { ___cxx_global_var_init_35() } }, { func: function() { ___cxx_global_var_init_34() } }, { func: function() { ___cxx_global_var_init_33() } }, { func: function() { ___cxx_global_var_init_32() } }, { func: function() { ___cxx_global_var_init_31() } }, { func: function() { ___cxx_global_var_init_30() } }, { func: function() { ___cxx_global_var_init_41() } }, { func: function() { __GLOBAL__sub_I_sfm_data_io_cpp() } }, { func: function() { __GLOBAL__sub_I_derived_cpp() } }, { func: function() { ___cxx_global_var_init_10_271() } }, { func: function() { ___cxx_global_var_init_9_270() } }, { func: function() { ___cxx_global_var_init_8_269() } }, { func: function() { ___cxx_global_var_init_7_268() } }, { func: function() { ___cxx_global_var_init_6_267() } }, { func: function() { ___cxx_global_var_init_5_266() } }, { func: function() { __GLOBAL__sub_I_base_cpp() } }, { func: function() { ___cxx_global_var_init_3_265() } }, { func: function() { ___cxx_global_var_init_2_264() } }, { func: function() { ___cxx_global_var_init_55() } }, { func: function() { ___cxx_global_var_init_66() } }, { func: function() { ___cxx_global_var_init_65() } }, { func: function() { ___cxx_global_var_init_64() } }, { func: function() { ___cxx_global_var_init_63() } }, { func: function() { ___cxx_global_var_init_62() } }, { func: function() { ___cxx_global_var_init_61() } }, { func: function() { ___cxx_global_var_init_60() } }, { func: function() { ___cxx_global_var_init_59() } }, { func: function() { ___cxx_global_var_init_58() } }, { func: function() { ___cxx_global_var_init_57() } }, { func: function() { ___cxx_global_var_init_56() } }, { func: function() { __GLOBAL__sub_I_image_io_cpp() } }, { func: function() { ___cxx_global_var_init_54() } }, { func: function() { ___cxx_global_var_init_53() } }, { func: function() { ___cxx_global_var_init_52() } }, { func: function() { ___cxx_global_var_init_51() } }, { func: function() { ___cxx_global_var_init_50() } }, { func: function() { ___cxx_global_var_init_49() } }, { func: function() { ___cxx_global_var_init_48() } }, { func: function() { ___cxx_global_var_init_47() } }, { func: function() { ___cxx_global_var_init_45() } }, { func: function() { ___cxx_global_var_init_43() } }, { func: function() { ___cxx_global_var_init_42() } });
+STATICTOP = STATIC_BASE + 261168;
+/* global initializers */  __ATINIT__.push({ func: function() { __GLOBAL__I_000101() } }, { func: function() { ___cxx_global_var_init_78() } }, { func: function() { ___cxx_global_var_init_90() } }, { func: function() { ___cxx_global_var_init_89() } }, { func: function() { ___cxx_global_var_init_88() } }, { func: function() { ___cxx_global_var_init_87() } }, { func: function() { ___cxx_global_var_init_86() } }, { func: function() { ___cxx_global_var_init_85() } }, { func: function() { ___cxx_global_var_init_84() } }, { func: function() { ___cxx_global_var_init_83() } }, { func: function() { ___cxx_global_var_init_82() } }, { func: function() { ___cxx_global_var_init_81() } }, { func: function() { ___cxx_global_var_init_80() } }, { func: function() { ___cxx_global_var_init_79() } }, { func: function() { ___cxx_global_var_init_91() } }, { func: function() { ___cxx_global_var_init_77() } }, { func: function() { ___cxx_global_var_init_76() } }, { func: function() { ___cxx_global_var_init_75() } }, { func: function() { ___cxx_global_var_init_74() } }, { func: function() { ___cxx_global_var_init_73() } }, { func: function() { ___cxx_global_var_init_72() } }, { func: function() { ___cxx_global_var_init_71() } }, { func: function() { ___cxx_global_var_init_70() } }, { func: function() { ___cxx_global_var_init_69() } }, { func: function() { ___cxx_global_var_init_68() } }, { func: function() { ___cxx_global_var_init_102() } }, { func: function() { __GLOBAL__sub_I_iostream_cpp() } }, { func: function() { ___emscripten_environ_constructor() } }, { func: function() { __GLOBAL__sub_I_sfm_data_utils_cpp() } }, { func: function() { __GLOBAL__sub_I_sfm_data_io_cereal_cpp() } }, { func: function() { ___cxx_global_var_init_109() } }, { func: function() { ___cxx_global_var_init_108() } }, { func: function() { ___cxx_global_var_init_107() } }, { func: function() { ___cxx_global_var_init_106() } }, { func: function() { ___cxx_global_var_init_105() } }, { func: function() { ___cxx_global_var_init_104() } }, { func: function() { ___cxx_global_var_init_103() } }, { func: function() { ___cxx_global_var_init_67() } }, { func: function() { ___cxx_global_var_init_101() } }, { func: function() { ___cxx_global_var_init_100() } }, { func: function() { ___cxx_global_var_init_99() } }, { func: function() { ___cxx_global_var_init_98() } }, { func: function() { ___cxx_global_var_init_97() } }, { func: function() { ___cxx_global_var_init_96() } }, { func: function() { ___cxx_global_var_init_95() } }, { func: function() { ___cxx_global_var_init_94() } }, { func: function() { ___cxx_global_var_init_93() } }, { func: function() { ___cxx_global_var_init_92() } }, { func: function() { __GLOBAL__sub_I_main_SfMInit_ImageListing_cpp() } }, { func: function() { ___cxx_global_var_init_40() } }, { func: function() { ___cxx_global_var_init_39() } }, { func: function() { ___cxx_global_var_init_38() } }, { func: function() { ___cxx_global_var_init_37() } }, { func: function() { ___cxx_global_var_init_36() } }, { func: function() { ___cxx_global_var_init_35() } }, { func: function() { ___cxx_global_var_init_34() } }, { func: function() { ___cxx_global_var_init_33() } }, { func: function() { ___cxx_global_var_init_32() } }, { func: function() { ___cxx_global_var_init_31() } }, { func: function() { ___cxx_global_var_init_30() } }, { func: function() { ___cxx_global_var_init_41() } }, { func: function() { __GLOBAL__sub_I_sfm_data_io_cpp() } }, { func: function() { __GLOBAL__sub_I_derived_cpp() } }, { func: function() { ___cxx_global_var_init_10_269() } }, { func: function() { ___cxx_global_var_init_9_268() } }, { func: function() { ___cxx_global_var_init_8_267() } }, { func: function() { ___cxx_global_var_init_7_266() } }, { func: function() { ___cxx_global_var_init_6_265() } }, { func: function() { ___cxx_global_var_init_5_264() } }, { func: function() { __GLOBAL__sub_I_base_cpp() } }, { func: function() { ___cxx_global_var_init_3_263() } }, { func: function() { ___cxx_global_var_init_2_262() } }, { func: function() { ___cxx_global_var_init_55() } }, { func: function() { ___cxx_global_var_init_66() } }, { func: function() { ___cxx_global_var_init_65() } }, { func: function() { ___cxx_global_var_init_64() } }, { func: function() { ___cxx_global_var_init_63() } }, { func: function() { ___cxx_global_var_init_62() } }, { func: function() { ___cxx_global_var_init_61() } }, { func: function() { ___cxx_global_var_init_60() } }, { func: function() { ___cxx_global_var_init_59() } }, { func: function() { ___cxx_global_var_init_58() } }, { func: function() { ___cxx_global_var_init_57() } }, { func: function() { ___cxx_global_var_init_56() } }, { func: function() { __GLOBAL__sub_I_image_io_cpp() } }, { func: function() { ___cxx_global_var_init_54() } }, { func: function() { ___cxx_global_var_init_53() } }, { func: function() { ___cxx_global_var_init_52() } }, { func: function() { ___cxx_global_var_init_51() } }, { func: function() { ___cxx_global_var_init_50() } }, { func: function() { ___cxx_global_var_init_49() } }, { func: function() { ___cxx_global_var_init_48() } }, { func: function() { ___cxx_global_var_init_47() } }, { func: function() { ___cxx_global_var_init_45() } }, { func: function() { ___cxx_global_var_init_43() } }, { func: function() { ___cxx_global_var_init_42() } });
 
 
 
@@ -1782,7 +1791,7 @@ STATICTOP = STATIC_BASE + 260992;
 
 
 
-var STATIC_BUMP = 260992;
+var STATIC_BUMP = 261168;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -2034,22 +2043,18 @@ function copyTempDouble(ptr) {
   function ___lock() {}
 
   
-  var ERRNO_CODES={EPERM:1,ENOENT:2,ESRCH:3,EINTR:4,EIO:5,ENXIO:6,E2BIG:7,ENOEXEC:8,EBADF:9,ECHILD:10,EAGAIN:11,EWOULDBLOCK:11,ENOMEM:12,EACCES:13,EFAULT:14,ENOTBLK:15,EBUSY:16,EEXIST:17,EXDEV:18,ENODEV:19,ENOTDIR:20,EISDIR:21,EINVAL:22,ENFILE:23,EMFILE:24,ENOTTY:25,ETXTBSY:26,EFBIG:27,ENOSPC:28,ESPIPE:29,EROFS:30,EMLINK:31,EPIPE:32,EDOM:33,ERANGE:34,ENOMSG:42,EIDRM:43,ECHRNG:44,EL2NSYNC:45,EL3HLT:46,EL3RST:47,ELNRNG:48,EUNATCH:49,ENOCSI:50,EL2HLT:51,EDEADLK:35,ENOLCK:37,EBADE:52,EBADR:53,EXFULL:54,ENOANO:55,EBADRQC:56,EBADSLT:57,EDEADLOCK:35,EBFONT:59,ENOSTR:60,ENODATA:61,ETIME:62,ENOSR:63,ENONET:64,ENOPKG:65,EREMOTE:66,ENOLINK:67,EADV:68,ESRMNT:69,ECOMM:70,EPROTO:71,EMULTIHOP:72,EDOTDOT:73,EBADMSG:74,ENOTUNIQ:76,EBADFD:77,EREMCHG:78,ELIBACC:79,ELIBBAD:80,ELIBSCN:81,ELIBMAX:82,ELIBEXEC:83,ENOSYS:38,ENOTEMPTY:39,ENAMETOOLONG:36,ELOOP:40,EOPNOTSUPP:95,EPFNOSUPPORT:96,ECONNRESET:104,ENOBUFS:105,EAFNOSUPPORT:97,EPROTOTYPE:91,ENOTSOCK:88,ENOPROTOOPT:92,ESHUTDOWN:108,ECONNREFUSED:111,EADDRINUSE:98,ECONNABORTED:103,ENETUNREACH:101,ENETDOWN:100,ETIMEDOUT:110,EHOSTDOWN:112,EHOSTUNREACH:113,EINPROGRESS:115,EALREADY:114,EDESTADDRREQ:89,EMSGSIZE:90,EPROTONOSUPPORT:93,ESOCKTNOSUPPORT:94,EADDRNOTAVAIL:99,ENETRESET:102,EISCONN:106,ENOTCONN:107,ETOOMANYREFS:109,EUSERS:87,EDQUOT:122,ESTALE:116,ENOTSUP:95,ENOMEDIUM:123,EILSEQ:84,EOVERFLOW:75,ECANCELED:125,ENOTRECOVERABLE:131,EOWNERDEAD:130,ESTRPIPE:86};
-  
   function ___setErrNo(value) {
       if (Module['___errno_location']) HEAP32[((Module['___errno_location']())>>2)]=value;
       else err('failed to set errno from JS');
       return value;
     }function ___map_file(pathname, size) {
-      ___setErrNo(ERRNO_CODES.EPERM);
+      ___setErrNo(1);
       return -1;
     }
 
 
   
   
-  
-  var ERRNO_MESSAGES={0:"Success",1:"Not super-user",2:"No such file or directory",3:"No such process",4:"Interrupted system call",5:"I/O error",6:"No such device or address",7:"Arg list too long",8:"Exec format error",9:"Bad file number",10:"No children",11:"No more processes",12:"Not enough core",13:"Permission denied",14:"Bad address",15:"Block device required",16:"Mount device busy",17:"File exists",18:"Cross-device link",19:"No such device",20:"Not a directory",21:"Is a directory",22:"Invalid argument",23:"Too many open files in system",24:"Too many open files",25:"Not a typewriter",26:"Text file busy",27:"File too large",28:"No space left on device",29:"Illegal seek",30:"Read only file system",31:"Too many links",32:"Broken pipe",33:"Math arg out of domain of func",34:"Math result not representable",35:"File locking deadlock error",36:"File or path name too long",37:"No record locks available",38:"Function not implemented",39:"Directory not empty",40:"Too many symbolic links",42:"No message of desired type",43:"Identifier removed",44:"Channel number out of range",45:"Level 2 not synchronized",46:"Level 3 halted",47:"Level 3 reset",48:"Link number out of range",49:"Protocol driver not attached",50:"No CSI structure available",51:"Level 2 halted",52:"Invalid exchange",53:"Invalid request descriptor",54:"Exchange full",55:"No anode",56:"Invalid request code",57:"Invalid slot",59:"Bad font file fmt",60:"Device not a stream",61:"No data (for no delay io)",62:"Timer expired",63:"Out of streams resources",64:"Machine is not on the network",65:"Package not installed",66:"The object is remote",67:"The link has been severed",68:"Advertise error",69:"Srmount error",70:"Communication error on send",71:"Protocol error",72:"Multihop attempted",73:"Cross mount point (not really error)",74:"Trying to read unreadable message",75:"Value too large for defined data type",76:"Given log. name not unique",77:"f.d. invalid for this operation",78:"Remote address changed",79:"Can   access a needed shared lib",80:"Accessing a corrupted shared lib",81:".lib section in a.out corrupted",82:"Attempting to link in too many libs",83:"Attempting to exec a shared library",84:"Illegal byte sequence",86:"Streams pipe error",87:"Too many users",88:"Socket operation on non-socket",89:"Destination address required",90:"Message too long",91:"Protocol wrong type for socket",92:"Protocol not available",93:"Unknown protocol",94:"Socket type not supported",95:"Not supported",96:"Protocol family not supported",97:"Address family not supported by protocol family",98:"Address already in use",99:"Address not available",100:"Network interface is not configured",101:"Network is unreachable",102:"Connection reset by network",103:"Connection aborted",104:"Connection reset by peer",105:"No buffer space available",106:"Socket is already connected",107:"Socket is not connected",108:"Can't send after socket shutdown",109:"Too many references",110:"Connection timed out",111:"Connection refused",112:"Host is down",113:"Host is unreachable",114:"Socket already connected",115:"Connection already in progress",116:"Stale file handle",122:"Quota exceeded",123:"No medium (in tape drive)",125:"Operation canceled",130:"Previous owner died",131:"State not recoverable"};
   
   var PATH={splitPath:function (filename) {
         var splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
@@ -3314,6 +3319,10 @@ function copyTempDouble(ptr) {
           return position;
         }}};
   
+  var ERRNO_MESSAGES={0:"Success",1:"Not super-user",2:"No such file or directory",3:"No such process",4:"Interrupted system call",5:"I/O error",6:"No such device or address",7:"Arg list too long",8:"Exec format error",9:"Bad file number",10:"No children",11:"No more processes",12:"Not enough core",13:"Permission denied",14:"Bad address",15:"Block device required",16:"Mount device busy",17:"File exists",18:"Cross-device link",19:"No such device",20:"Not a directory",21:"Is a directory",22:"Invalid argument",23:"Too many open files in system",24:"Too many open files",25:"Not a typewriter",26:"Text file busy",27:"File too large",28:"No space left on device",29:"Illegal seek",30:"Read only file system",31:"Too many links",32:"Broken pipe",33:"Math arg out of domain of func",34:"Math result not representable",35:"File locking deadlock error",36:"File or path name too long",37:"No record locks available",38:"Function not implemented",39:"Directory not empty",40:"Too many symbolic links",42:"No message of desired type",43:"Identifier removed",44:"Channel number out of range",45:"Level 2 not synchronized",46:"Level 3 halted",47:"Level 3 reset",48:"Link number out of range",49:"Protocol driver not attached",50:"No CSI structure available",51:"Level 2 halted",52:"Invalid exchange",53:"Invalid request descriptor",54:"Exchange full",55:"No anode",56:"Invalid request code",57:"Invalid slot",59:"Bad font file fmt",60:"Device not a stream",61:"No data (for no delay io)",62:"Timer expired",63:"Out of streams resources",64:"Machine is not on the network",65:"Package not installed",66:"The object is remote",67:"The link has been severed",68:"Advertise error",69:"Srmount error",70:"Communication error on send",71:"Protocol error",72:"Multihop attempted",73:"Cross mount point (not really error)",74:"Trying to read unreadable message",75:"Value too large for defined data type",76:"Given log. name not unique",77:"f.d. invalid for this operation",78:"Remote address changed",79:"Can   access a needed shared lib",80:"Accessing a corrupted shared lib",81:".lib section in a.out corrupted",82:"Attempting to link in too many libs",83:"Attempting to exec a shared library",84:"Illegal byte sequence",86:"Streams pipe error",87:"Too many users",88:"Socket operation on non-socket",89:"Destination address required",90:"Message too long",91:"Protocol wrong type for socket",92:"Protocol not available",93:"Unknown protocol",94:"Socket type not supported",95:"Not supported",96:"Protocol family not supported",97:"Address family not supported by protocol family",98:"Address already in use",99:"Address not available",100:"Network interface is not configured",101:"Network is unreachable",102:"Connection reset by network",103:"Connection aborted",104:"Connection reset by peer",105:"No buffer space available",106:"Socket is already connected",107:"Socket is not connected",108:"Can't send after socket shutdown",109:"Too many references",110:"Connection timed out",111:"Connection refused",112:"Host is down",113:"Host is unreachable",114:"Socket already connected",115:"Connection already in progress",116:"Stale file handle",122:"Quota exceeded",123:"No medium (in tape drive)",125:"Operation canceled",130:"Previous owner died",131:"State not recoverable"};
+  
+  var ERRNO_CODES={EPERM:1,ENOENT:2,ESRCH:3,EINTR:4,EIO:5,ENXIO:6,E2BIG:7,ENOEXEC:8,EBADF:9,ECHILD:10,EAGAIN:11,EWOULDBLOCK:11,ENOMEM:12,EACCES:13,EFAULT:14,ENOTBLK:15,EBUSY:16,EEXIST:17,EXDEV:18,ENODEV:19,ENOTDIR:20,EISDIR:21,EINVAL:22,ENFILE:23,EMFILE:24,ENOTTY:25,ETXTBSY:26,EFBIG:27,ENOSPC:28,ESPIPE:29,EROFS:30,EMLINK:31,EPIPE:32,EDOM:33,ERANGE:34,ENOMSG:42,EIDRM:43,ECHRNG:44,EL2NSYNC:45,EL3HLT:46,EL3RST:47,ELNRNG:48,EUNATCH:49,ENOCSI:50,EL2HLT:51,EDEADLK:35,ENOLCK:37,EBADE:52,EBADR:53,EXFULL:54,ENOANO:55,EBADRQC:56,EBADSLT:57,EDEADLOCK:35,EBFONT:59,ENOSTR:60,ENODATA:61,ETIME:62,ENOSR:63,ENONET:64,ENOPKG:65,EREMOTE:66,ENOLINK:67,EADV:68,ESRMNT:69,ECOMM:70,EPROTO:71,EMULTIHOP:72,EDOTDOT:73,EBADMSG:74,ENOTUNIQ:76,EBADFD:77,EREMCHG:78,ELIBACC:79,ELIBBAD:80,ELIBSCN:81,ELIBMAX:82,ELIBEXEC:83,ENOSYS:38,ENOTEMPTY:39,ENAMETOOLONG:36,ELOOP:40,EOPNOTSUPP:95,EPFNOSUPPORT:96,ECONNRESET:104,ENOBUFS:105,EAFNOSUPPORT:97,EPROTOTYPE:91,ENOTSOCK:88,ENOPROTOOPT:92,ESHUTDOWN:108,ECONNREFUSED:111,EADDRINUSE:98,ECONNABORTED:103,ENETUNREACH:101,ENETDOWN:100,ETIMEDOUT:110,EHOSTDOWN:112,EHOSTUNREACH:113,EINPROGRESS:115,EALREADY:114,EDESTADDRREQ:89,EMSGSIZE:90,EPROTONOSUPPORT:93,ESOCKTNOSUPPORT:94,EADDRNOTAVAIL:99,ENETRESET:102,EISCONN:106,ENOTCONN:107,ETOOMANYREFS:109,EUSERS:87,EDQUOT:122,ESTALE:116,ENOTSUP:95,ENOMEDIUM:123,EILSEQ:84,EOVERFLOW:75,ECANCELED:125,ENOTRECOVERABLE:131,EOWNERDEAD:130,ESTRPIPE:86};
+  
   var _stdin=STATICTOP; STATICTOP += 16;;
   
   var _stdout=STATICTOP; STATICTOP += 16;;
@@ -3338,7 +3347,7 @@ function copyTempDouble(ptr) {
         }
   
         if (opts.recurse_count > 8) {  // max recursive lookup of 8
-          throw new FS.ErrnoError(ERRNO_CODES.ELOOP);
+          throw new FS.ErrnoError(40);
         }
   
         // split the path
@@ -3379,7 +3388,7 @@ function copyTempDouble(ptr) {
               current = lookup.node;
   
               if (count++ > 40) {  // limit max consecutive symlinks to 40 (SYMLOOP_MAX).
-                throw new FS.ErrnoError(ERRNO_CODES.ELOOP);
+                throw new FS.ErrnoError(40);
               }
             }
           }
@@ -3523,22 +3532,22 @@ function copyTempDouble(ptr) {
         }
         // return 0 if any user, group or owner bits are set.
         if (perms.indexOf('r') !== -1 && !(node.mode & 292)) {
-          return ERRNO_CODES.EACCES;
+          return 13;
         } else if (perms.indexOf('w') !== -1 && !(node.mode & 146)) {
-          return ERRNO_CODES.EACCES;
+          return 13;
         } else if (perms.indexOf('x') !== -1 && !(node.mode & 73)) {
-          return ERRNO_CODES.EACCES;
+          return 13;
         }
         return 0;
       },mayLookup:function (dir) {
         var err = FS.nodePermissions(dir, 'x');
         if (err) return err;
-        if (!dir.node_ops.lookup) return ERRNO_CODES.EACCES;
+        if (!dir.node_ops.lookup) return 13;
         return 0;
       },mayCreate:function (dir, name) {
         try {
           var node = FS.lookupNode(dir, name);
-          return ERRNO_CODES.EEXIST;
+          return 17;
         } catch (e) {
         }
         return FS.nodePermissions(dir, 'wx');
@@ -3555,27 +3564,27 @@ function copyTempDouble(ptr) {
         }
         if (isdir) {
           if (!FS.isDir(node.mode)) {
-            return ERRNO_CODES.ENOTDIR;
+            return 20;
           }
           if (FS.isRoot(node) || FS.getPath(node) === FS.cwd()) {
-            return ERRNO_CODES.EBUSY;
+            return 16;
           }
         } else {
           if (FS.isDir(node.mode)) {
-            return ERRNO_CODES.EISDIR;
+            return 21;
           }
         }
         return 0;
       },mayOpen:function (node, flags) {
         if (!node) {
-          return ERRNO_CODES.ENOENT;
+          return 2;
         }
         if (FS.isLink(node.mode)) {
-          return ERRNO_CODES.ELOOP;
+          return 40;
         } else if (FS.isDir(node.mode)) {
           if (FS.flagsToPermissionString(flags) !== 'r' || // opening for write
               (flags & 512)) { // TODO: check for O_SEARCH? (== search for dir only)
-            return ERRNO_CODES.EISDIR;
+            return 21;
           }
         }
         return FS.nodePermissions(node, FS.flagsToPermissionString(flags));
@@ -3587,7 +3596,7 @@ function copyTempDouble(ptr) {
             return fd;
           }
         }
-        throw new FS.ErrnoError(ERRNO_CODES.EMFILE);
+        throw new FS.ErrnoError(24);
       },getStream:function (fd) {
         return FS.streams[fd];
       },createStream:function (stream, fd_start, fd_end) {
@@ -3632,7 +3641,7 @@ function copyTempDouble(ptr) {
             stream.stream_ops.open(stream);
           }
         },llseek:function () {
-          throw new FS.ErrnoError(ERRNO_CODES.ESPIPE);
+          throw new FS.ErrnoError(29);
         }},major:function (dev) {
         return ((dev) >> 8);
       },minor:function (dev) {
@@ -3703,7 +3712,7 @@ function copyTempDouble(ptr) {
         var node;
   
         if (root && FS.root) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBUSY);
+          throw new FS.ErrnoError(16);
         } else if (!root && !pseudo) {
           var lookup = FS.lookupPath(mountpoint, { follow_mount: false });
   
@@ -3711,11 +3720,11 @@ function copyTempDouble(ptr) {
           node = lookup.node;
   
           if (FS.isMountpoint(node)) {
-            throw new FS.ErrnoError(ERRNO_CODES.EBUSY);
+            throw new FS.ErrnoError(16);
           }
   
           if (!FS.isDir(node.mode)) {
-            throw new FS.ErrnoError(ERRNO_CODES.ENOTDIR);
+            throw new FS.ErrnoError(20);
           }
         }
   
@@ -3748,7 +3757,7 @@ function copyTempDouble(ptr) {
         var lookup = FS.lookupPath(mountpoint, { follow_mount: false });
   
         if (!FS.isMountpoint(lookup.node)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
   
         // destroy the nodes for this mount, and all its child mounts
@@ -3784,14 +3793,14 @@ function copyTempDouble(ptr) {
         var parent = lookup.node;
         var name = PATH.basename(path);
         if (!name || name === '.' || name === '..') {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         var err = FS.mayCreate(parent, name);
         if (err) {
           throw new FS.ErrnoError(err);
         }
         if (!parent.node_ops.mknod) {
-          throw new FS.ErrnoError(ERRNO_CODES.EPERM);
+          throw new FS.ErrnoError(1);
         }
         return parent.node_ops.mknod(parent, name, mode, dev);
       },create:function (path, mode) {
@@ -3813,7 +3822,7 @@ function copyTempDouble(ptr) {
           try {
             FS.mkdir(d, mode);
           } catch(e) {
-            if (e.errno != ERRNO_CODES.EEXIST) throw e;
+            if (e.errno != 17) throw e;
           }
         }
       },mkdev:function (path, mode, dev) {
@@ -3825,12 +3834,12 @@ function copyTempDouble(ptr) {
         return FS.mknod(path, mode, dev);
       },symlink:function (oldpath, newpath) {
         if (!PATH.resolve(oldpath)) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOENT);
+          throw new FS.ErrnoError(2);
         }
         var lookup = FS.lookupPath(newpath, { parent: true });
         var parent = lookup.node;
         if (!parent) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOENT);
+          throw new FS.ErrnoError(2);
         }
         var newname = PATH.basename(newpath);
         var err = FS.mayCreate(parent, newname);
@@ -3838,7 +3847,7 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(err);
         }
         if (!parent.node_ops.symlink) {
-          throw new FS.ErrnoError(ERRNO_CODES.EPERM);
+          throw new FS.ErrnoError(1);
         }
         return parent.node_ops.symlink(parent, newname, oldpath);
       },rename:function (old_path, new_path) {
@@ -3854,24 +3863,24 @@ function copyTempDouble(ptr) {
           lookup = FS.lookupPath(new_path, { parent: true });
           new_dir = lookup.node;
         } catch (e) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBUSY);
+          throw new FS.ErrnoError(16);
         }
-        if (!old_dir || !new_dir) throw new FS.ErrnoError(ERRNO_CODES.ENOENT);
+        if (!old_dir || !new_dir) throw new FS.ErrnoError(2);
         // need to be part of the same mount
         if (old_dir.mount !== new_dir.mount) {
-          throw new FS.ErrnoError(ERRNO_CODES.EXDEV);
+          throw new FS.ErrnoError(18);
         }
         // source must exist
         var old_node = FS.lookupNode(old_dir, old_name);
         // old path should not be an ancestor of the new path
         var relative = PATH.relative(old_path, new_dirname);
         if (relative.charAt(0) !== '.') {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         // new path should not be an ancestor of the old path
         relative = PATH.relative(new_path, old_dirname);
         if (relative.charAt(0) !== '.') {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOTEMPTY);
+          throw new FS.ErrnoError(39);
         }
         // see if the new path already exists
         var new_node;
@@ -3899,10 +3908,10 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(err);
         }
         if (!old_dir.node_ops.rename) {
-          throw new FS.ErrnoError(ERRNO_CODES.EPERM);
+          throw new FS.ErrnoError(1);
         }
         if (FS.isMountpoint(old_node) || (new_node && FS.isMountpoint(new_node))) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBUSY);
+          throw new FS.ErrnoError(16);
         }
         // if we are going to change the parent, check write permissions
         if (new_dir !== old_dir) {
@@ -3945,10 +3954,10 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(err);
         }
         if (!parent.node_ops.rmdir) {
-          throw new FS.ErrnoError(ERRNO_CODES.EPERM);
+          throw new FS.ErrnoError(1);
         }
         if (FS.isMountpoint(node)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBUSY);
+          throw new FS.ErrnoError(16);
         }
         try {
           if (FS.trackingDelegate['willDeletePath']) {
@@ -3968,7 +3977,7 @@ function copyTempDouble(ptr) {
         var lookup = FS.lookupPath(path, { follow: true });
         var node = lookup.node;
         if (!node.node_ops.readdir) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOTDIR);
+          throw new FS.ErrnoError(20);
         }
         return node.node_ops.readdir(node);
       },unlink:function (path) {
@@ -3984,10 +3993,10 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(err);
         }
         if (!parent.node_ops.unlink) {
-          throw new FS.ErrnoError(ERRNO_CODES.EPERM);
+          throw new FS.ErrnoError(1);
         }
         if (FS.isMountpoint(node)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBUSY);
+          throw new FS.ErrnoError(16);
         }
         try {
           if (FS.trackingDelegate['willDeletePath']) {
@@ -4007,20 +4016,20 @@ function copyTempDouble(ptr) {
         var lookup = FS.lookupPath(path);
         var link = lookup.node;
         if (!link) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOENT);
+          throw new FS.ErrnoError(2);
         }
         if (!link.node_ops.readlink) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         return PATH.resolve(FS.getPath(link.parent), link.node_ops.readlink(link));
       },stat:function (path, dontFollow) {
         var lookup = FS.lookupPath(path, { follow: !dontFollow });
         var node = lookup.node;
         if (!node) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOENT);
+          throw new FS.ErrnoError(2);
         }
         if (!node.node_ops.getattr) {
-          throw new FS.ErrnoError(ERRNO_CODES.EPERM);
+          throw new FS.ErrnoError(1);
         }
         return node.node_ops.getattr(node);
       },lstat:function (path) {
@@ -4034,7 +4043,7 @@ function copyTempDouble(ptr) {
           node = path;
         }
         if (!node.node_ops.setattr) {
-          throw new FS.ErrnoError(ERRNO_CODES.EPERM);
+          throw new FS.ErrnoError(1);
         }
         node.node_ops.setattr(node, {
           mode: (mode & 4095) | (node.mode & ~4095),
@@ -4045,7 +4054,7 @@ function copyTempDouble(ptr) {
       },fchmod:function (fd, mode) {
         var stream = FS.getStream(fd);
         if (!stream) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         FS.chmod(stream.node, mode);
       },chown:function (path, uid, gid, dontFollow) {
@@ -4057,7 +4066,7 @@ function copyTempDouble(ptr) {
           node = path;
         }
         if (!node.node_ops.setattr) {
-          throw new FS.ErrnoError(ERRNO_CODES.EPERM);
+          throw new FS.ErrnoError(1);
         }
         node.node_ops.setattr(node, {
           timestamp: Date.now()
@@ -4068,12 +4077,12 @@ function copyTempDouble(ptr) {
       },fchown:function (fd, uid, gid) {
         var stream = FS.getStream(fd);
         if (!stream) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         FS.chown(stream.node, uid, gid);
       },truncate:function (path, len) {
         if (len < 0) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         var node;
         if (typeof path === 'string') {
@@ -4083,13 +4092,13 @@ function copyTempDouble(ptr) {
           node = path;
         }
         if (!node.node_ops.setattr) {
-          throw new FS.ErrnoError(ERRNO_CODES.EPERM);
+          throw new FS.ErrnoError(1);
         }
         if (FS.isDir(node.mode)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EISDIR);
+          throw new FS.ErrnoError(21);
         }
         if (!FS.isFile(node.mode)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         var err = FS.nodePermissions(node, 'w');
         if (err) {
@@ -4102,10 +4111,10 @@ function copyTempDouble(ptr) {
       },ftruncate:function (fd, len) {
         var stream = FS.getStream(fd);
         if (!stream) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         if ((stream.flags & 2097155) === 0) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         FS.truncate(stream.node, len);
       },utime:function (path, atime, mtime) {
@@ -4116,7 +4125,7 @@ function copyTempDouble(ptr) {
         });
       },open:function (path, flags, mode, fd_start, fd_end) {
         if (path === "") {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOENT);
+          throw new FS.ErrnoError(2);
         }
         flags = typeof flags === 'string' ? FS.modeStringToFlags(flags) : flags;
         mode = typeof mode === 'undefined' ? 438 /* 0666 */ : mode;
@@ -4145,7 +4154,7 @@ function copyTempDouble(ptr) {
           if (node) {
             // if O_CREAT and O_EXCL are set, error out if the node already exists
             if ((flags & 128)) {
-              throw new FS.ErrnoError(ERRNO_CODES.EEXIST);
+              throw new FS.ErrnoError(17);
             }
           } else {
             // node doesn't exist, try to create it
@@ -4154,7 +4163,7 @@ function copyTempDouble(ptr) {
           }
         }
         if (!node) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOENT);
+          throw new FS.ErrnoError(2);
         }
         // can't truncate a device
         if (FS.isChrdev(node.mode)) {
@@ -4162,7 +4171,7 @@ function copyTempDouble(ptr) {
         }
         // if asked only for a directory, then this must be one
         if ((flags & 65536) && !FS.isDir(node.mode)) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOTDIR);
+          throw new FS.ErrnoError(20);
         }
         // check permissions, if this is not a file we just created now (it is ok to
         // create and write to a file with read-only permissions; it is read-only
@@ -4220,7 +4229,7 @@ function copyTempDouble(ptr) {
         return stream;
       },close:function (stream) {
         if (FS.isClosed(stream)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         if (stream.getdents) stream.getdents = null; // free readdir state
         try {
@@ -4237,54 +4246,54 @@ function copyTempDouble(ptr) {
         return stream.fd === null;
       },llseek:function (stream, offset, whence) {
         if (FS.isClosed(stream)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         if (!stream.seekable || !stream.stream_ops.llseek) {
-          throw new FS.ErrnoError(ERRNO_CODES.ESPIPE);
+          throw new FS.ErrnoError(29);
         }
         stream.position = stream.stream_ops.llseek(stream, offset, whence);
         stream.ungotten = [];
         return stream.position;
       },read:function (stream, buffer, offset, length, position) {
         if (length < 0 || position < 0) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         if (FS.isClosed(stream)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         if ((stream.flags & 2097155) === 1) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         if (FS.isDir(stream.node.mode)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EISDIR);
+          throw new FS.ErrnoError(21);
         }
         if (!stream.stream_ops.read) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         var seeking = typeof position !== 'undefined';
         if (!seeking) {
           position = stream.position;
         } else if (!stream.seekable) {
-          throw new FS.ErrnoError(ERRNO_CODES.ESPIPE);
+          throw new FS.ErrnoError(29);
         }
         var bytesRead = stream.stream_ops.read(stream, buffer, offset, length, position);
         if (!seeking) stream.position += bytesRead;
         return bytesRead;
       },write:function (stream, buffer, offset, length, position, canOwn) {
         if (length < 0 || position < 0) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         if (FS.isClosed(stream)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         if ((stream.flags & 2097155) === 0) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         if (FS.isDir(stream.node.mode)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EISDIR);
+          throw new FS.ErrnoError(21);
         }
         if (!stream.stream_ops.write) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         if (stream.flags & 1024) {
           // seek to the end before writing in append mode
@@ -4294,7 +4303,7 @@ function copyTempDouble(ptr) {
         if (!seeking) {
           position = stream.position;
         } else if (!stream.seekable) {
-          throw new FS.ErrnoError(ERRNO_CODES.ESPIPE);
+          throw new FS.ErrnoError(29);
         }
         var bytesWritten = stream.stream_ops.write(stream, buffer, offset, length, position, canOwn);
         if (!seeking) stream.position += bytesWritten;
@@ -4306,28 +4315,28 @@ function copyTempDouble(ptr) {
         return bytesWritten;
       },allocate:function (stream, offset, length) {
         if (FS.isClosed(stream)) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         if (offset < 0 || length <= 0) {
-          throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
+          throw new FS.ErrnoError(22);
         }
         if ((stream.flags & 2097155) === 0) {
-          throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+          throw new FS.ErrnoError(9);
         }
         if (!FS.isFile(stream.node.mode) && !FS.isDir(stream.node.mode)) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENODEV);
+          throw new FS.ErrnoError(19);
         }
         if (!stream.stream_ops.allocate) {
-          throw new FS.ErrnoError(ERRNO_CODES.EOPNOTSUPP);
+          throw new FS.ErrnoError(95);
         }
         stream.stream_ops.allocate(stream, offset, length);
       },mmap:function (stream, buffer, offset, length, position, prot, flags) {
         // TODO if PROT is PROT_WRITE, make sure we have write access
         if ((stream.flags & 2097155) === 1) {
-          throw new FS.ErrnoError(ERRNO_CODES.EACCES);
+          throw new FS.ErrnoError(13);
         }
         if (!stream.stream_ops.mmap) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENODEV);
+          throw new FS.ErrnoError(19);
         }
         return stream.stream_ops.mmap(stream, buffer, offset, length, position, prot, flags);
       },msync:function (stream, buffer, offset, length, mmapFlags) {
@@ -4339,7 +4348,7 @@ function copyTempDouble(ptr) {
         return 0;
       },ioctl:function (stream, cmd, arg) {
         if (!stream.stream_ops.ioctl) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOTTY);
+          throw new FS.ErrnoError(25);
         }
         return stream.stream_ops.ioctl(stream, cmd, arg);
       },readFile:function (path, opts) {
@@ -4381,10 +4390,10 @@ function copyTempDouble(ptr) {
       },chdir:function (path) {
         var lookup = FS.lookupPath(path, { follow: true });
         if (lookup.node === null) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOENT);
+          throw new FS.ErrnoError(2);
         }
         if (!FS.isDir(lookup.node.mode)) {
-          throw new FS.ErrnoError(ERRNO_CODES.ENOTDIR);
+          throw new FS.ErrnoError(20);
         }
         var err = FS.nodePermissions(lookup.node, 'x');
         if (err) {
@@ -4442,7 +4451,7 @@ function copyTempDouble(ptr) {
               lookup: function(parent, name) {
                 var fd = +name;
                 var stream = FS.getStream(fd);
-                if (!stream) throw new FS.ErrnoError(ERRNO_CODES.EBADF);
+                if (!stream) throw new FS.ErrnoError(9);
                 var ret = {
                   parent: null,
                   mount: { mountpoint: 'fake' },
@@ -4511,7 +4520,7 @@ function copyTempDouble(ptr) {
         FS.ErrnoError.prototype = new Error();
         FS.ErrnoError.prototype.constructor = FS.ErrnoError;
         // Some errors may happen quite a bit, to avoid overhead we reuse them (and suffer a lack of stack info)
-        [ERRNO_CODES.ENOENT].forEach(function(code) {
+        [2].forEach(function(code) {
           FS.genericErrors[code] = new FS.ErrnoError(code);
           FS.genericErrors[code].stack = '<generic error, no stack>';
         });
@@ -4670,10 +4679,10 @@ function copyTempDouble(ptr) {
               try {
                 result = input();
               } catch (e) {
-                throw new FS.ErrnoError(ERRNO_CODES.EIO);
+                throw new FS.ErrnoError(5);
               }
               if (result === undefined && bytesRead === 0) {
-                throw new FS.ErrnoError(ERRNO_CODES.EAGAIN);
+                throw new FS.ErrnoError(11);
               }
               if (result === null || result === undefined) break;
               bytesRead++;
@@ -4689,7 +4698,7 @@ function copyTempDouble(ptr) {
               try {
                 output(buffer[offset+i]);
               } catch (e) {
-                throw new FS.ErrnoError(ERRNO_CODES.EIO);
+                throw new FS.ErrnoError(5);
               }
             }
             if (length) {
@@ -4720,7 +4729,7 @@ function copyTempDouble(ptr) {
         } else {
           throw new Error('Cannot load without read() or XMLHttpRequest.');
         }
-        if (!success) ___setErrNo(ERRNO_CODES.EIO);
+        if (!success) ___setErrNo(5);
         return success;
       },createLazyFile:function (parent, name, url, canRead, canWrite) {
         // Lazy chunked Uint8Array (implements get and length from Uint8Array). Actual getting is abstracted away for eventual reuse.
@@ -4852,7 +4861,7 @@ function copyTempDouble(ptr) {
           var fn = node.stream_ops[key];
           stream_ops[key] = function forceLoadLazyFile() {
             if (!FS.forceLoadFile(node)) {
-              throw new FS.ErrnoError(ERRNO_CODES.EIO);
+              throw new FS.ErrnoError(5);
             }
             return fn.apply(null, arguments);
           };
@@ -4860,7 +4869,7 @@ function copyTempDouble(ptr) {
         // use a custom read function
         stream_ops.read = function stream_ops_read(stream, buffer, offset, length, position) {
           if (!FS.forceLoadFile(node)) {
-            throw new FS.ErrnoError(ERRNO_CODES.EIO);
+            throw new FS.ErrnoError(5);
           }
           var contents = stream.node.contents;
           if (position >= contents.length)
@@ -6975,16 +6984,16 @@ var real____cxx_global_var_init_109 = asm["___cxx_global_var_init_109"]; asm["__
   return real____cxx_global_var_init_109.apply(null, arguments);
 };
 
-var real____cxx_global_var_init_10_271 = asm["___cxx_global_var_init_10_271"]; asm["___cxx_global_var_init_10_271"] = function() {
+var real____cxx_global_var_init_10_269 = asm["___cxx_global_var_init_10_269"]; asm["___cxx_global_var_init_10_269"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____cxx_global_var_init_10_271.apply(null, arguments);
+  return real____cxx_global_var_init_10_269.apply(null, arguments);
 };
 
-var real____cxx_global_var_init_2_264 = asm["___cxx_global_var_init_2_264"]; asm["___cxx_global_var_init_2_264"] = function() {
+var real____cxx_global_var_init_2_262 = asm["___cxx_global_var_init_2_262"]; asm["___cxx_global_var_init_2_262"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____cxx_global_var_init_2_264.apply(null, arguments);
+  return real____cxx_global_var_init_2_262.apply(null, arguments);
 };
 
 var real____cxx_global_var_init_30 = asm["___cxx_global_var_init_30"]; asm["___cxx_global_var_init_30"] = function() {
@@ -7047,10 +7056,10 @@ var real____cxx_global_var_init_39 = asm["___cxx_global_var_init_39"]; asm["___c
   return real____cxx_global_var_init_39.apply(null, arguments);
 };
 
-var real____cxx_global_var_init_3_265 = asm["___cxx_global_var_init_3_265"]; asm["___cxx_global_var_init_3_265"] = function() {
+var real____cxx_global_var_init_3_263 = asm["___cxx_global_var_init_3_263"]; asm["___cxx_global_var_init_3_263"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____cxx_global_var_init_3_265.apply(null, arguments);
+  return real____cxx_global_var_init_3_263.apply(null, arguments);
 };
 
 var real____cxx_global_var_init_40 = asm["___cxx_global_var_init_40"]; asm["___cxx_global_var_init_40"] = function() {
@@ -7161,10 +7170,10 @@ var real____cxx_global_var_init_59 = asm["___cxx_global_var_init_59"]; asm["___c
   return real____cxx_global_var_init_59.apply(null, arguments);
 };
 
-var real____cxx_global_var_init_5_266 = asm["___cxx_global_var_init_5_266"]; asm["___cxx_global_var_init_5_266"] = function() {
+var real____cxx_global_var_init_5_264 = asm["___cxx_global_var_init_5_264"]; asm["___cxx_global_var_init_5_264"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____cxx_global_var_init_5_266.apply(null, arguments);
+  return real____cxx_global_var_init_5_264.apply(null, arguments);
 };
 
 var real____cxx_global_var_init_60 = asm["___cxx_global_var_init_60"]; asm["___cxx_global_var_init_60"] = function() {
@@ -7227,10 +7236,10 @@ var real____cxx_global_var_init_69 = asm["___cxx_global_var_init_69"]; asm["___c
   return real____cxx_global_var_init_69.apply(null, arguments);
 };
 
-var real____cxx_global_var_init_6_267 = asm["___cxx_global_var_init_6_267"]; asm["___cxx_global_var_init_6_267"] = function() {
+var real____cxx_global_var_init_6_265 = asm["___cxx_global_var_init_6_265"]; asm["___cxx_global_var_init_6_265"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____cxx_global_var_init_6_267.apply(null, arguments);
+  return real____cxx_global_var_init_6_265.apply(null, arguments);
 };
 
 var real____cxx_global_var_init_70 = asm["___cxx_global_var_init_70"]; asm["___cxx_global_var_init_70"] = function() {
@@ -7293,10 +7302,10 @@ var real____cxx_global_var_init_79 = asm["___cxx_global_var_init_79"]; asm["___c
   return real____cxx_global_var_init_79.apply(null, arguments);
 };
 
-var real____cxx_global_var_init_7_268 = asm["___cxx_global_var_init_7_268"]; asm["___cxx_global_var_init_7_268"] = function() {
+var real____cxx_global_var_init_7_266 = asm["___cxx_global_var_init_7_266"]; asm["___cxx_global_var_init_7_266"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____cxx_global_var_init_7_268.apply(null, arguments);
+  return real____cxx_global_var_init_7_266.apply(null, arguments);
 };
 
 var real____cxx_global_var_init_80 = asm["___cxx_global_var_init_80"]; asm["___cxx_global_var_init_80"] = function() {
@@ -7359,10 +7368,10 @@ var real____cxx_global_var_init_89 = asm["___cxx_global_var_init_89"]; asm["___c
   return real____cxx_global_var_init_89.apply(null, arguments);
 };
 
-var real____cxx_global_var_init_8_269 = asm["___cxx_global_var_init_8_269"]; asm["___cxx_global_var_init_8_269"] = function() {
+var real____cxx_global_var_init_8_267 = asm["___cxx_global_var_init_8_267"]; asm["___cxx_global_var_init_8_267"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____cxx_global_var_init_8_269.apply(null, arguments);
+  return real____cxx_global_var_init_8_267.apply(null, arguments);
 };
 
 var real____cxx_global_var_init_90 = asm["___cxx_global_var_init_90"]; asm["___cxx_global_var_init_90"] = function() {
@@ -7425,10 +7434,10 @@ var real____cxx_global_var_init_99 = asm["___cxx_global_var_init_99"]; asm["___c
   return real____cxx_global_var_init_99.apply(null, arguments);
 };
 
-var real____cxx_global_var_init_9_270 = asm["___cxx_global_var_init_9_270"]; asm["___cxx_global_var_init_9_270"] = function() {
+var real____cxx_global_var_init_9_268 = asm["___cxx_global_var_init_9_268"]; asm["___cxx_global_var_init_9_268"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return real____cxx_global_var_init_9_270.apply(null, arguments);
+  return real____cxx_global_var_init_9_268.apply(null, arguments);
 };
 
 var real____emscripten_environ_constructor = asm["___emscripten_environ_constructor"]; asm["___emscripten_environ_constructor"] = function() {
@@ -7883,14 +7892,14 @@ var ___cxx_global_var_init_109 = Module["___cxx_global_var_init_109"] = function
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["___cxx_global_var_init_109"].apply(null, arguments) };
-var ___cxx_global_var_init_10_271 = Module["___cxx_global_var_init_10_271"] = function() {
+var ___cxx_global_var_init_10_269 = Module["___cxx_global_var_init_10_269"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___cxx_global_var_init_10_271"].apply(null, arguments) };
-var ___cxx_global_var_init_2_264 = Module["___cxx_global_var_init_2_264"] = function() {
+  return Module["asm"]["___cxx_global_var_init_10_269"].apply(null, arguments) };
+var ___cxx_global_var_init_2_262 = Module["___cxx_global_var_init_2_262"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___cxx_global_var_init_2_264"].apply(null, arguments) };
+  return Module["asm"]["___cxx_global_var_init_2_262"].apply(null, arguments) };
 var ___cxx_global_var_init_30 = Module["___cxx_global_var_init_30"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -7931,10 +7940,10 @@ var ___cxx_global_var_init_39 = Module["___cxx_global_var_init_39"] = function()
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["___cxx_global_var_init_39"].apply(null, arguments) };
-var ___cxx_global_var_init_3_265 = Module["___cxx_global_var_init_3_265"] = function() {
+var ___cxx_global_var_init_3_263 = Module["___cxx_global_var_init_3_263"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___cxx_global_var_init_3_265"].apply(null, arguments) };
+  return Module["asm"]["___cxx_global_var_init_3_263"].apply(null, arguments) };
 var ___cxx_global_var_init_40 = Module["___cxx_global_var_init_40"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -8007,10 +8016,10 @@ var ___cxx_global_var_init_59 = Module["___cxx_global_var_init_59"] = function()
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["___cxx_global_var_init_59"].apply(null, arguments) };
-var ___cxx_global_var_init_5_266 = Module["___cxx_global_var_init_5_266"] = function() {
+var ___cxx_global_var_init_5_264 = Module["___cxx_global_var_init_5_264"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___cxx_global_var_init_5_266"].apply(null, arguments) };
+  return Module["asm"]["___cxx_global_var_init_5_264"].apply(null, arguments) };
 var ___cxx_global_var_init_60 = Module["___cxx_global_var_init_60"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -8051,10 +8060,10 @@ var ___cxx_global_var_init_69 = Module["___cxx_global_var_init_69"] = function()
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["___cxx_global_var_init_69"].apply(null, arguments) };
-var ___cxx_global_var_init_6_267 = Module["___cxx_global_var_init_6_267"] = function() {
+var ___cxx_global_var_init_6_265 = Module["___cxx_global_var_init_6_265"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___cxx_global_var_init_6_267"].apply(null, arguments) };
+  return Module["asm"]["___cxx_global_var_init_6_265"].apply(null, arguments) };
 var ___cxx_global_var_init_70 = Module["___cxx_global_var_init_70"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -8095,10 +8104,10 @@ var ___cxx_global_var_init_79 = Module["___cxx_global_var_init_79"] = function()
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["___cxx_global_var_init_79"].apply(null, arguments) };
-var ___cxx_global_var_init_7_268 = Module["___cxx_global_var_init_7_268"] = function() {
+var ___cxx_global_var_init_7_266 = Module["___cxx_global_var_init_7_266"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___cxx_global_var_init_7_268"].apply(null, arguments) };
+  return Module["asm"]["___cxx_global_var_init_7_266"].apply(null, arguments) };
 var ___cxx_global_var_init_80 = Module["___cxx_global_var_init_80"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -8139,10 +8148,10 @@ var ___cxx_global_var_init_89 = Module["___cxx_global_var_init_89"] = function()
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["___cxx_global_var_init_89"].apply(null, arguments) };
-var ___cxx_global_var_init_8_269 = Module["___cxx_global_var_init_8_269"] = function() {
+var ___cxx_global_var_init_8_267 = Module["___cxx_global_var_init_8_267"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___cxx_global_var_init_8_269"].apply(null, arguments) };
+  return Module["asm"]["___cxx_global_var_init_8_267"].apply(null, arguments) };
 var ___cxx_global_var_init_90 = Module["___cxx_global_var_init_90"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -8183,10 +8192,10 @@ var ___cxx_global_var_init_99 = Module["___cxx_global_var_init_99"] = function()
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["___cxx_global_var_init_99"].apply(null, arguments) };
-var ___cxx_global_var_init_9_270 = Module["___cxx_global_var_init_9_270"] = function() {
+var ___cxx_global_var_init_9_268 = Module["___cxx_global_var_init_9_268"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["___cxx_global_var_init_9_270"].apply(null, arguments) };
+  return Module["asm"]["___cxx_global_var_init_9_268"].apply(null, arguments) };
 var ___emscripten_environ_constructor = Module["___emscripten_environ_constructor"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -8537,7 +8546,9 @@ if (!Module["stackRestore"]) Module["stackRestore"] = function() { abort("'stack
 if (!Module["stackAlloc"]) Module["stackAlloc"] = function() { abort("'stackAlloc' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Module["establishStackSpace"]) Module["establishStackSpace"] = function() { abort("'establishStackSpace' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Module["print"]) Module["print"] = function() { abort("'print' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
-if (!Module["printErr"]) Module["printErr"] = function() { abort("'printErr' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };if (!Module["ALLOC_NORMAL"]) Object.defineProperty(Module, "ALLOC_NORMAL", { get: function() { abort("'ALLOC_NORMAL' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
+if (!Module["printErr"]) Module["printErr"] = function() { abort("'printErr' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["getTempRet0"]) Module["getTempRet0"] = function() { abort("'getTempRet0' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["setTempRet0"]) Module["setTempRet0"] = function() { abort("'setTempRet0' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };if (!Module["ALLOC_NORMAL"]) Object.defineProperty(Module, "ALLOC_NORMAL", { get: function() { abort("'ALLOC_NORMAL' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
 if (!Module["ALLOC_STACK"]) Object.defineProperty(Module, "ALLOC_STACK", { get: function() { abort("'ALLOC_STACK' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
 if (!Module["ALLOC_STATIC"]) Object.defineProperty(Module, "ALLOC_STATIC", { get: function() { abort("'ALLOC_STATIC' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
 if (!Module["ALLOC_DYNAMIC"]) Object.defineProperty(Module, "ALLOC_DYNAMIC", { get: function() { abort("'ALLOC_DYNAMIC' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
@@ -8581,7 +8592,6 @@ function ExitStatus(status) {
 ExitStatus.prototype = new Error();
 ExitStatus.prototype.constructor = ExitStatus;
 
-var initialStackTop;
 var calledMain = false;
 
 dependenciesFulfilled = function runCaller() {
@@ -8750,7 +8760,6 @@ function exit(status, implicit) {
 
     ABORT = true;
     EXITSTATUS = status;
-    STACKTOP = initialStackTop;
 
     exitRuntime();
 
