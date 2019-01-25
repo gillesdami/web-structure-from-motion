@@ -39,8 +39,6 @@ RUN git clone https://github.com/eigenteam/eigen-git-mirror
 WORKDIR /home/openMVG/build_js
 #COPY src/lemon_config.h /home/openMVG/src/third_party/lemon/lemon/config.h
 COPY src/pre-js.js /home/pre-js.js
-COPY src/wsfm.cpp /home/wsfm.cpp
-COPY src/wsfm.hpp /home/wsfm.hpp
 COPY src/Makefile /home/Makefile
 COPY src/tif_config.h /home/openMVG/src/third_party/tiff/tif_config.h
 COPY src/jconfig.h /home/openMVG/src/third_party/jpeg/jconfig.h
