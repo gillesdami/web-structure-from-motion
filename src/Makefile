@@ -5,7 +5,7 @@ LEMON_DIR = $(SRC_DIR)/third_party/lemon
 OSI_CLP_DIR = $(SRC_DIR)/dependencies/osi_clp
 TMP_DIR = /tmp
 
-JS_OPTIONS = -s MODULARIZE=1 -s EXPORT_NAME="$@" --pre-js $(CONFIG_DIR)/pre-js.js $(PREFERENCE) -s DISABLE_EXCEPTION_CATCHING=0 -s EXTRA_EXPORTED_RUNTIME_METHODS=["FS"]
+JS_OPTIONS = -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME="$@" --pre-js $(CONFIG_DIR)/pre-js.js $(PREFERENCE) -s DISABLE_EXCEPTION_CATCHING=0 -s EXTRA_EXPORTED_RUNTIME_METHODS=["FS"]
 BC_OPTIONS = --std=c++11
 
 COMMON_INCLUDES = -I$(SRC_DIR) -I$(EIGEN_DIR) -I$(SRC_DIR)/dependencies/cereal/include/
@@ -26,13 +26,12 @@ main_ComputeFeatures: stlplus sift image zlib features system cereal
 #	echo "todo"
 
 main_ComputeMatches: lemon stlplus features system cereal multiview ceres matching_image_collection numeric matching
-	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) -s ERROR_ON_UNDEFINED_SYMBOLS=0 $(COMMON_INCLUDES) -I$(SRC_DIR)/third_party/lemon/ $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp $(TMP_DIR)/cereal.bc $(SRC_DIR)/software/SfM/$@.cpp
+	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) -s "BINARYEN_TRAP_MODE='clamp'" $(COMMON_INCLUDES) -I$(SRC_DIR)/third_party/lemon/ $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp $(TMP_DIR)/cereal.bc $(SRC_DIR)/software/SfM/$@.cpp
 
 main_SfMInit_ImageListing: exif_IO_EasyExif image_io zlib stlplus easyexif cereal
 	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/software/SfM/$@.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp
 
 main_GlobalSfM: stlplus pipelines_global features system sfm geometry linearProgramming multiview numeric cxsparse
-	echo "WIP"
 	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/software/SfM/$@.cpp $(OSI_CLP_DIR)/Clp/src/liblib_clp.a $(OSI_CLP_DIR)/Clp/src/OsiClp/liblib_OsiClpSolver.a $(OSI_CLP_DIR)/Osi/src/Osi/liblib_Osi.a $(OSI_CLP_DIR)/CoinUtils/src/liblib_CoinUtils.a $(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/glog/logging.cc -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I$(SRC_DIR)/third_party/ceres-solver/include/ -I$(SRC_DIR)/third_party/ceres-solver/config/ $(SRC_DIR)/openMVG/matching/indMatch_utils.cpp $(SRC_DIR)/third_party/ceres-solver/lib/libopenMVG_ceres.a -I$(EIGEN_DIR) -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I../src/third_party/ceres-solver/internal/ -I$(SRC_DIR)/third_party/ceres-solver/include/ 
 
 pipelines_global: lemon ceres
