@@ -1,111 +1,161 @@
-/**
- * Allocate the program memory and init the file system
- */
-const ctxs = [main_SfMInit_ImageListing(), 
-    main_ComputeFeatures(),
-    main_ComputeMatches(),
-    main_GlobalSfM()];
+const runButton = document.getElementById('runProgram');
+const infoElement = document.getElementById('info');
 
-for (ctx of ctxs) {
+/********
+ * UTILS
+ ********/
+
+/**
+ * load a script
+ * 
+ * @param {string} src 
+ */
+const loadScript = async(src) => new Promise(r => {
+    const script = document.createElement('script');
+    script.onload = r;
+    script.src = src;
+    document.head.appendChild(script);
+});
+
+/**
+ * files input to uint8
+ * 
+ * @param {Files} files
+ * @returns {*} [[fileName, Uint8Array], ...]
+ */
+const filesToUint8Arrays = (files) =>
+    Promise.all(Array.from(files).map(async (file) => new Promise(r => {
+        const fr = new FileReader();
+        fr.onload = () => r([file.name, new Uint8Array(fr.result)]);
+        fr.readAsArrayBuffer(file);
+    })));
+
+/**
+ * Read all files in a dir and return them
+ * 
+ * @param {*} ctx emscripten wrapper
+ * @param {string} dir 
+ * @returns {*} [[fileName, Uint8Array], ...]
+ */
+const readAll = (ctx, dir) =>
+    ctx.FS.readdir(dir)
+        .filter(f => f != '.' && f != '..')
+        .map(f => [f, ctx.FS.readFile(dir + '/' + f)]);
+
+/**
+ * Write files data in a dir
+ * 
+ * @param {*} ctx emscripten wrapper
+ * @param {string} dir 
+ * @param {*} data [[fileName, Uint8Array], ...]
+ */
+const writeAll = (ctx, dir, data) =>
+    data.forEach(d => ctx.FS.writeFile(dir + '/' + d[0], d[1]));
+
+/**
+ * Create working dirs
+ * 
+ * @param {*} ctx emscripten wrapper
+ */
+const prepareFS = (ctx) => {
     ctx.FS.mkdir('/input');
     ctx.FS.mkdir('/matches');
     ctx.FS.mkdir('/output');
-    ctx.print = log;
-    ctx.printErr = (txt) => log(txt, true);
-}
+};
 
 /**
- * Logging utility
+ * Makes the client download a blob
  * 
- * @param {string} txt 
+ * @param {Blob} blob 
+ * @param {string} name 
  */
-function log(txt, err = false) {
-    console.log(txt);
-}
-
-/**
- * Reset the file system
- */
-function clearFS() {
-    for (var dir of ["/input", "/matches", "/output"]) {
-        for (file of bfs.nodefs.readdirSync(dir)) {
-            if(file !== "." && file !== "..")
-                bfs.nodefs.unlinkSync(dir + "/" + file);
-        }
-    }
-    log("Filesystem cleared !");
-}
-
-/**
- * Upload the selected files to the filesystem
- * 
- * @param {Event} evt 
- */
-async function uploadFilesToWasm(files) {
-    return Promise.all(Array.from(files).map(async function(file) {
-        return new Promise(r => {
-            var fr = new FileReader();
-            fr.onload = function () {
-                var data = new Uint8Array(fr.result);
-                for(ctx of ctxs) {
-                    ctx.FS.writeFile('/input/' + file.name, data);
-                }
-                console.log('/input/'+ file.name);
-                r();
-            };
-            fr.readAsArrayBuffer(file);
-        });
-    }));
-}
-
-function download(blob, name) {
+const download = (blob, name) => {
     var elem = window.document.createElement('a');
     elem.href = window.URL.createObjectURL(blob);
     elem.download = name;
     document.body.appendChild(elem);
     elem.click();
     document.body.removeChild(elem);
-} 
-
-function transferData(ctxFrom, ctxTo, dir) {
-    for (file of ctxFrom.FS.readdir(dir)) {
-        if(file !== "." && file !== "..") {
-            ctxTo.FS.writeFile(dir + "/" + file, ctxFrom.FS.readFile(dir + "/" + file));
-        }
-    }
 }
 
-/**
- * run main_SfMInit_ImageListing and make the browser download the result
- * 
- * @param  {string[]} args
- */
-async function run() {
-    var fileInput = document.getElementById('fileloader');
+const promiseContextReady = (ctx) => 
+    new Promise(r => ctx['onRuntimeInitialized'] = r);
 
-    //clearFS();
-    await uploadFilesToWasm(fileInput.files);
+/********
+ * Main
+ ********/
+const run = async () => {
+    runButton.removeEventListener("click", run);
+    infoElement.innerText = "Step 0/4 - Loading input files";
+
+    const fileInput = document.getElementById('fileloader');
+    const inputData = await filesToUint8Arrays(fileInput.files);
     fileInput.value = '';
+    
+    //// main_SfMInit_ImageListing ////
+    infoElement.innerText = "Step 1/4 - Image listing";
+    await loadScript("../dist/main_SfMInit_ImageListing.js");
+    let ctx = main_SfMInit_ImageListing();
+    await promiseContextReady(ctx);
+    prepareFS(ctx);
+    writeAll(ctx, '/input', inputData);    
 
-    ctxs[0]['callMain'](["-i", "/input", "-o", "/matches", "-d", "/input/sensor_width_camera_database.txt"]);
-    log("program0 done");
-    transferData(ctxs[0], ctxs[1], '/matches');
-    ctxs[0] = null;
+    ctx['callMain'](["-i", "/input", "-o", "/matches", "-d", "/input/sensor_width_camera_database.txt"]);
+    let resultData = readAll(ctx, '/matches');
 
-    ctxs[1]['callMain'](["-i", "/matches/sfm_data.json", "-o", "/matches"]);
-    log("program1 done");
-    transferData(ctxs[1], ctxs[2], '/matches');
-    ctxs[1] = null;
+    main_SfMInit_ImageListing = null;
 
-    ctxs[2]['callMain'](["-i", "/matches/sfm_data.json", "-o", "/matches", "-g", "e"]);
-    log("program2 done");
-    transferData(ctxs[2], ctxs[3], '/matches');
-    ctxs[2] = null;
+    //// main_ComputeFeatures /////
+    infoElement.innerText = "Step 2/4 - Compute Features (takes a while, you should do something else)";
+    await loadScript("../dist/main_ComputeFeatures.js");
+    ctx = main_ComputeFeatures();
+    await promiseContextReady(ctx);
+    prepareFS(ctx);
+    writeAll(ctx, '/input', inputData);
+    writeAll(ctx, '/matches', resultData);
 
-    ctxs[3]['callMain'](["-i", "/matches/sfm_data.json", "-m", "/matches", "-o", "/output"]);    
-    log("program3 done")
+    ctx['callMain'](["-i", "/matches/sfm_data.json", "-o", "/matches"]);
+    resultData = readAll(ctx, '/matches');
 
-    download(new Blob([ctxs[3].FS.readFile('/output/cloud_and_poses.ply')]), 'cp2.ply')
-    download(new Blob([ctxs[3].FS.readFile('/output/residuals_histogram.svg')]), 'residuals_histogram.svg')
-}
-document.getElementById('runProgram').addEventListener("click", run);
+    main_ComputeFeatures = null;
+
+    //// main_ComputeMatches ////
+    infoElement.innerText = "Step 3/4 - Compute Matches (takes a while, you should do something else)";
+    await loadScript("../dist/main_ComputeMatches.js");
+    ctx = main_ComputeMatches();
+    await promiseContextReady(ctx);
+    prepareFS(ctx);
+    writeAll(ctx, '/input', inputData);
+    writeAll(ctx, '/matches', resultData);
+
+    ctx['callMain'](["-i", "/matches/sfm_data.json", "-o", "/matches", "-g", "e"]);
+    resultData = readAll(ctx, '/matches');
+
+    main_ComputeMatches = null;
+
+    //// main_GlobalSfM
+    infoElement.innerText = "Step 4/4 - Reconstruction (takes a while, you should do something else)";
+    await loadScript("../dist/main_GlobalSfM.js");
+    ctx = main_GlobalSfM();
+    await promiseContextReady(ctx);
+    prepareFS(ctx);
+    writeAll(ctx, '/input', inputData);
+    writeAll(ctx, '/matches', resultData);
+
+    ctx['callMain'](["-i", "/matches/sfm_data.json", "-m", "/matches", "-o", "/output"]);
+    resultData = readAll(ctx, '/matches');
+
+    main_GlobalSfM = null;
+
+    const zip = new JSZip();
+    resultData.forEach(f => zip.file(f[0], f[1]));
+    download(await zip.generateAsync({type : "blob"}), "results.zip");
+
+    infoElement.innerText = "End - Downloaded result";
+};
+runButton.addEventListener("click", run);
+
+window.addEventListener("error", function (e) {
+    alert("An error occurred: " + e.error.message);
+    return false;
+});
