@@ -6,7 +6,7 @@ OSI_CLP_DIR = $(SRC_DIR)/dependencies/osi_clp
 TMP_DIR = /tmp
 
 JS_OPTIONS = -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME="$@" --pre-js $(CONFIG_DIR)/pre-js.js $(PREFERENCE) -s DISABLE_EXCEPTION_CATCHING=0 -s EXTRA_EXPORTED_RUNTIME_METHODS=["FS"]
-BC_OPTIONS = --std=c++11
+BC_OPTIONS = --std=c++11 -o3 
 
 COMMON_INCLUDES = -I$(SRC_DIR) -I$(EIGEN_DIR) -I$(SRC_DIR)/dependencies/cereal/include/
 
@@ -32,7 +32,7 @@ main_SfMInit_ImageListing: exif_IO_EasyExif image_io zlib stlplus easyexif cerea
 	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/openMVG/sfm/sfm_data_io.cpp $(SRC_DIR)/software/SfM/$@.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_io_cereal.cpp $(SRC_DIR)/openMVG/sfm/sfm_data_utils.cpp
 
 main_GlobalSfM: stlplus pipelines_global features system sfm geometry linearProgramming multiview numeric cxsparse
-	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/software/SfM/$@.cpp $(OSI_CLP_DIR)/Clp/src/liblib_clp.a $(OSI_CLP_DIR)/Clp/src/OsiClp/liblib_OsiClpSolver.a $(OSI_CLP_DIR)/Osi/src/Osi/liblib_Osi.a $(OSI_CLP_DIR)/CoinUtils/src/liblib_CoinUtils.a $(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/glog/logging.cc -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I$(SRC_DIR)/third_party/ceres-solver/include/ -I$(SRC_DIR)/third_party/ceres-solver/config/ $(SRC_DIR)/openMVG/matching/indMatch_utils.cpp $(SRC_DIR)/third_party/ceres-solver/lib/libopenMVG_ceres.a -I$(EIGEN_DIR) -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I../src/third_party/ceres-solver/internal/ -I$(SRC_DIR)/third_party/ceres-solver/include/ 
+	em++ -o $@.js $(JS_OPTIONS) $(BC_OPTIONS) -s "BINARYEN_TRAP_MODE='clamp'" $(COMMON_INCLUDES) $(patsubst %, $(TMP_DIR)/%.bc, $?) $(SRC_DIR)/software/SfM/$@.cpp $(OSI_CLP_DIR)/Clp/src/liblib_clp.a $(OSI_CLP_DIR)/Clp/src/OsiClp/liblib_OsiClpSolver.a $(OSI_CLP_DIR)/Osi/src/Osi/liblib_Osi.a $(OSI_CLP_DIR)/CoinUtils/src/liblib_CoinUtils.a $(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/glog/logging.cc -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I$(SRC_DIR)/third_party/ceres-solver/include/ -I$(SRC_DIR)/third_party/ceres-solver/config/ $(SRC_DIR)/openMVG/matching/indMatch_utils.cpp $(SRC_DIR)/third_party/ceres-solver/lib/libopenMVG_ceres.a -I$(EIGEN_DIR) -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I../src/third_party/ceres-solver/internal/ -I$(SRC_DIR)/third_party/ceres-solver/include/ 
 
 pipelines_global: lemon ceres
 	em++ -o $(TMP_DIR)/$@.bc $(BC_OPTIONS) $(COMMON_INCLUDES) $(filter-out $(wildcard $(SRC_DIR)/openMVG/sfm/pipelines/global/*_test.cpp),$(wildcard $(SRC_DIR)/openMVG/sfm/pipelines/global/*.cpp)) $(SRC_DIR)/openMVG/sfm/pipelines/relative_pose_engine.cpp $(SRC_DIR)/openMVG/sfm/pipelines/sfm_robust_model_estimation.cpp -I$(SRC_DIR)/third_party/ceres-solver/internal/ceres/miniglog/ -I$(SRC_DIR)/third_party/lemon/ -I$(SRC_DIR)/third_party/ceres-solver/include/ -I$(SRC_DIR)/third_party/ceres-solver/config/ $(patsubst %, $(TMP_DIR)/%.bc, $?)

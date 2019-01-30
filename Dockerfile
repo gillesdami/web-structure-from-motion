@@ -20,27 +20,27 @@ RUN apt-get update && apt-get install -y \
 
 # install emscripten
 WORKDIR /home
-RUN git clone https://github.com/juj/emsdk.git
+RUN git clone https://github.com/emscripten-core/emsdk.git
 WORKDIR /home/emsdk
+RUN git checkout ea5d631
 RUN ./emsdk install latest
 RUN ./emsdk activate latest
 
 # install openMVG
 WORKDIR /home
-RUN git clone https://github.com/openMVG/openMVG.git
+RUN git clone https://github.com/openMVG/openMVG.git --branch v1.4
 WORKDIR /home/openMVG
 RUN git submodule update -i
 
 # install eigen
 WORKDIR /home
-RUN git clone https://github.com/eigenteam/eigen-git-mirror
+RUN git clone https://github.com/eigenteam/eigen-git-mirror --branch 3.3.7
 
 # build openMVG-js
 WORKDIR /home/openMVG/build_js
-#COPY src/lemon_config.h /home/openMVG/src/third_party/lemon/lemon/config.h
 COPY src/pre-js.js /home/pre-js.js
 COPY src/Makefile /home/Makefile
 COPY src/tif_config.h /home/openMVG/src/third_party/tiff/tif_config.h
 COPY src/jconfig.h /home/openMVG/src/third_party/jpeg/jconfig.h
-#RUN ["chmod", "+x", "/home/build.sh"]
+
 ENTRYPOINT ["/bin/bash", "-c", "source /home/emsdk/emsdk_env.sh && make -f /home/Makefile"]
