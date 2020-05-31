@@ -10,7 +10,7 @@ I recommand reading and following the [tutorial of openMVG](https://openmvg.read
 
 The file system API port is documented [here](https://kripken.github.io/emscripten-site/docs/api_reference/Filesystem-API.html) and [here](https://kripken.github.io/emscripten-site/docs/api_reference/advanced-apis.html).
 
-I also provide a complete [example](example.js) on how to use the lib.
+I also provide a complete [example](/example) on how to use the lib.
 
 ## Build
 
