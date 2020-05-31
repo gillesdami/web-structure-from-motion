@@ -94,7 +94,7 @@ const run = async () => {
     
     //// main_SfMInit_ImageListing ////
     infoElement.innerText = "Step 1/4 - Image listing";
-    await loadScript("../dist/main_SfMInit_ImageListing.js");
+    await loadScript("./dist/main_SfMInit_ImageListing.js");
     let ctx = main_SfMInit_ImageListing();
     await promiseContextReady(ctx);
     prepareFS(ctx);
@@ -107,7 +107,7 @@ const run = async () => {
 
     //// main_ComputeFeatures /////
     infoElement.innerText = "Step 2/4 - Compute Features (takes a while, you should do something else)";
-    await loadScript("../dist/main_ComputeFeatures.js");
+    await loadScript("./dist/main_ComputeFeatures.js");
     ctx = main_ComputeFeatures();
     await promiseContextReady(ctx);
     prepareFS(ctx);
@@ -121,7 +121,7 @@ const run = async () => {
 
     //// main_ComputeMatches ////
     infoElement.innerText = "Step 3/4 - Compute Matches (takes a while, you should do something else)";
-    await loadScript("../dist/main_ComputeMatches.js");
+    await loadScript("./dist/main_ComputeMatches.js");
     ctx = main_ComputeMatches();
     await promiseContextReady(ctx);
     prepareFS(ctx);
@@ -135,7 +135,7 @@ const run = async () => {
 
     //// main_GlobalSfM
     infoElement.innerText = "Step 4/4 - Reconstruction (takes a while, you should do something else)";
-    await loadScript("../dist/main_GlobalSfM.js");
+    await loadScript("./dist/main_GlobalSfM.js");
     ctx = main_GlobalSfM();
     await promiseContextReady(ctx);
     prepareFS(ctx);
