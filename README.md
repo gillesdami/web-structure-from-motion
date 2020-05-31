@@ -4,6 +4,8 @@ SfM pipeline from  [openMVG](https://github.com/openMVG/openMVG) ported to js.
 
 This port is made possible by the amazing work of [emscripten](https://github.com/kripken/emscripten) and [openMVG](https://github.com/openMVG/openMVG) teams, checkout their repos!
 
+![imgDemo](imgDemo.png)
+
 ## Usage
 
 I recommand reading and following the [tutorial of openMVG](https://openmvg.readthedocs.io/en/latest/software/SfM/SfM/) using this repo.
